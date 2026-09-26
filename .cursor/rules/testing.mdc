@@ -1,0 +1,19 @@
+---
+description: Jest coverage above 80% for frontend and backend
+globs: "**/*.{test,spec}.{ts,tsx,rb}"
+alwaysApply: false
+---
+
+# Tests
+
+Jest on the frontend and the backend. Statement, branch, function, and line coverage stay above 80%, and the README records the numbers.
+
+Frontend: React Testing Library and MSW. Tests run with `NODE_OPTIONS='--experimental-vm-modules'`. Cover Luhn, CVV, expiry, Visa/Mastercard brand detection, the transaction body (token, no `number` or `cvc`), and the three outcomes.
+
+Backend: one test per use case, with the success Result and the failure Result. Do not call the real gateway; use a fake port.
+
+```ts
+// ❌ expect(body.number).toBe('4242…')
+// ✅ expect(body.cardToken).toBe('tok_approved')
+//    expect(body).not.toHaveProperty('cvc')
+```

@@ -1,0 +1,13 @@
+---
+description: Plain mobile-first CSS that stays inside the viewport
+globs: fe-store/**/*.css
+alwaysApply: false
+---
+
+# Styles
+
+One file: `fe-store/src/styles/global.css`. Plain CSS, without Tailwind, Sass, CSS Modules, or styled-components.
+
+- Reuse the `:root` variables (`--bg`, `--ink`, `--accent`, `--sans`, `--serif`). Do not introduce another palette.
+- Lay out with Flexbox and CSS Grid. The base layout fits 375×667 and grows without horizontal scroll (`overflow-x: hidden` on `body`, `max-width: 100%` on images).
+- The primary button fills the column width on mobile. Status and error text stay visible and do not cover the form.

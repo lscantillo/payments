@@ -1,0 +1,26 @@
+---
+description: Sinatra API with hexagonal architecture, ROP, and PostgreSQL
+globs: "**/*.{rb,ru}"
+alwaysApply: false
+---
+
+# Backend
+
+Sinatra with hexagonal architecture. Use cases return a Result (success or failure) and do not throw for the happy path.
+
+```
+domain/        entities and ports
+application/   use cases (ROP)
+adapters/      Sinatra HTTP, PostgreSQL, payment gateway
+```
+
+Minimum modules: products/stock, transactions, customers, deliveries. PostgreSQL with seeds. A product-creation endpoint is not required.
+
+Contract the frontend already consumes:
+
+- `GET /api/products/:id`
+- `POST /api/checkout/quote` with `{ productId }`
+- `POST /api/transactions` with `{ productId, cardToken, installments, customer, delivery }` → `PENDING`
+- `GET /api/transactions/:id` → `PENDING | APPROVED | DECLINED | ERROR`
+
+Only the gateway adapter calls the sandbox with the private key. The database stores the token and last4, never the PAN or CVV. Document the API with Swagger or OpenAPI in the README.

@@ -1,0 +1,24 @@
+---
+description: React, Redux, and checkout flow conventions
+globs: fe-store/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Frontend
+
+React with strict TypeScript and Redux Toolkit (Flux). No router: screens are the step `product | payment | summary | processing | result`.
+
+Place code like this:
+
+- `src/domain` types; `src/features/{product,payment,checkout}` slices and screens
+- `src/services` HTTP, tokenization, and polling; `src/app` store and persistence; `src/shared` reusable UI
+
+The product button label is exactly `Pay with credit card`. The summary shows product amount + base fee + shipping = total. The final status copy is Aprobada, Rechazada, or Fallida, and returning to the product shows the updated stock.
+
+The card number and CVV live only in `PaymentModal` local state. Tokenize there before dispatching. Redux receives `cardToken` and `cardMeta` (brand, last4, holder, expiry). `redux-persist` uses `checkoutStorage` in `src/app/persistStorage.ts`, not the library storage.
+
+```ts
+// ❌ dispatch(pay({ number, cvc }))
+// ✅ const cardToken = await tokenizeCard(card)
+//    dispatch(createTransaction({ productId, cardToken, installments: 1, customer, delivery }))
+```

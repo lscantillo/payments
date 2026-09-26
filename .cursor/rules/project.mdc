@@ -1,0 +1,15 @@
+---
+description: Challenge constraints that apply to the whole repository
+alwaysApply: true
+---
+
+# Project
+
+Checkout SPA plus API. The frontend lives in `fe-store`. The backend is Ruby with Sinatra (an allowed option for this challenge), not Rails or Nest.
+
+- Repo and package names must not include the payment gateway brand. Environment variables use `VITE_GATEWAY_*`.
+- Sandbox only. Keys, secrets, and passwords stay in `.env`, never in code, tests, the README, or commits. The private key and the integrity secret stay on the server. The browser uses only the public key.
+- Never persist the PAN or CVV in PostgreSQL, Redux, `localStorage`, or logs.
+- Amounts are in cents, currency is `COP`, and JSON is camelCase.
+- Progressive history: one branch and one pull request per feature. Do not squash commits when merging.
+- Each app README documents architecture, install steps, the deployed URL, Swagger or Postman, and Jest coverage above 80%.
