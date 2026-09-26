@@ -1,0 +1,5 @@
+process.env.VITE_API_BASE_URL = 'http://localhost:4567'
+process.env.VITE_PRODUCT_ID = 'prod-1'
+process.env.VITE_GATEWAY_API_URL = 'https://gateway.test/v1'
+process.env.VITE_GATEWAY_PUBLIC_KEY = 'pub_test_key'
+process.env.VITE_USE_MOCKS = 'false'

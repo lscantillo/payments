@@ -137,3 +137,8 @@ El flujo contempla:
 - **[+10 pts]** Implementación estricta de Railway Oriented Programming (ROP).
 
 ---
+
+## 7. Consideraciones
+
+1. Si se detecta que el repositorio no presenta avances ni confirmaciones, o que es similar a la solución de otro candidato, la
+prueba se anulará automáticamente por fraude.

@@ -1,75 +1,61 @@
-# React + TypeScript + Vite
+# fe-store
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+SPA de checkout: producto, datos de tarjeta y entrega, resumen de tarifas y estado final del pago. React, TypeScript y Redux Toolkit (Flux).
 
-Currently, two official plugins are available:
+## Requisitos
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Node.js 22 o superior
+- API de checkout en `VITE_API_BASE_URL` (el backend todavía puede no estar levantado; los mocks locales cubren el flujo)
 
-## React Compiler
+## Instalación
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+cd fe-store
+cp .env.example .env
+npm install
+npx msw init public/ --save
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+## Variables
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| Variable | Uso |
+| :--- | :--- |
+| `VITE_API_BASE_URL` | Origen de la API propia |
+| `VITE_PRODUCT_ID` | Producto que muestra la tienda |
+| `VITE_GATEWAY_API_URL` | Base de la pasarela sandbox, por ejemplo `https://api-sandbox.co.uat.wompi.dev/v1` |
+| `VITE_GATEWAY_PUBLIC_KEY` | Llave pública de sandbox. La llave privada no vive en el frontend |
+| `VITE_USE_MOCKS` | `true` intercepta API y pasarela en el navegador para desarrollar sin backend |
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+El número de tarjeta y el CVV se tokenizan en el navegador con la llave pública. No entran a Redux, a `localStorage` ni al cuerpo que se envía a la API propia. El backend recibe `cardToken`, el cliente y la entrega.
 
+## Scripts
+
+```bash
+npm run dev
+npm run build
+npm test
+npm run test:coverage
 ```
+
+## Flujo
+
+1. La página carga `GET /api/products/:id` y muestra imagen, precio y stock. Sin stock, `Pay with credit card` queda deshabilitado.
+2. El modal valida Luhn, marca (Visa / Mastercard), CVV, vencimiento y datos de entrega.
+3. Al continuar, el navegador pide un token a la pasarela y la API devuelve el quote: monto del producto, tarifa base, tarifa de envío y total.
+4. Confirmar envía `POST /api/transactions` con el token y una cuota. La pantalla consulta `GET /api/transactions/:id` hasta Aprobada, Rechazada, Fallida o un pendiente que se puede reconsultar.
+5. Volver al producto limpia la sesión y vuelve a pedir el stock.
+
+Un refresh conserva el paso, la entrega, el quote, los últimos 4 dígitos y la transacción. La tarjeta hay que volver a escribirla.
+
+## Cobertura
+
+Jest, React Testing Library y MSW. Umbral global superior al 80%.
+
+| Métrica | Resultado |
+| :--- | :--- |
+| Statements | 94.58% |
+| Branches | 87.17% |
+| Functions | 93.54% |
+| Lines | 95.75% |
+
+29 pruebas pasando (`npm run test:coverage`).
