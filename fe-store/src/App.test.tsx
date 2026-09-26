@@ -2,7 +2,7 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { env } from './config/env'
-import { createHandlers, sampleProduct, sampleQuote } from './mocks/handlers'
+import { catalog, createHandlers, sampleProduct, sampleQuote } from './mocks/handlers'
 import { pollConfig } from './services/pollTransaction'
 import { server } from './test/setup'
 import { renderApp } from './test/renderApp'
@@ -31,6 +31,22 @@ async function pay(user: ReturnType<typeof userEvent.setup>, number = '424242424
 }
 
 describe('checkout flow', () => {
+  it('lists the collection and opens a product detail before payment', async () => {
+    const user = userEvent.setup()
+    renderApp('/')
+    expect(await screen.findByRole('heading', { name: 'Piezas para la mesa, hechas a mano.' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Pay with credit card' })).not.toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: 'Ver detalle' })).toHaveLength(catalog.length)
+
+    await user.click(screen.getAllByRole('link', { name: 'Ver detalle' })[1])
+    expect(await screen.findByRole('heading', { name: catalog[1].name })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Pay with credit card' })).toBeEnabled()
+    expect(screen.getByRole('link', { name: 'Volver al catálogo' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('link', { name: 'Volver al catálogo' }))
+    expect(await screen.findByRole('heading', { name: 'Piezas para la mesa, hechas a mano.' })).toBeInTheDocument()
+  })
+
   it('approves a card payment and returns with updated stock', async () => {
     const user = userEvent.setup()
     const view = renderApp()

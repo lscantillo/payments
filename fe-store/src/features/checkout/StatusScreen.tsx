@@ -1,5 +1,4 @@
 import { useAppDispatch, useAppSelector } from '../../app/hooks'
-import { env } from '../../config/env'
 import { resetCheckout } from './checkoutSlice'
 import { pollTransaction } from './checkoutThunks'
 import { fetchProduct } from '../product/productSlice'
@@ -29,10 +28,11 @@ export function StatusScreen() {
   const step = useAppSelector((state) => state.checkout.step)
   const transaction = useAppSelector((state) => state.checkout.transaction)
   const error = useAppSelector((state) => state.checkout.error)
+  const productId = useAppSelector((state) => state.product.product?.id)
 
   function backToProduct() {
     dispatch(resetCheckout())
-    void dispatch(fetchProduct(env.productId))
+    if (productId) void dispatch(fetchProduct(productId))
   }
 
   if (step === 'processing') {

@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Provider } from 'react-redux'
+import { BrowserRouter } from 'react-router'
 import { PersistGate } from 'redux-persist/integration/react'
 import { createAppStore } from './app/store'
 import { env } from './config/env'
@@ -28,7 +29,9 @@ void (async () => {
           persistor={persistor}
           onBeforeLift={() => resumePendingTransaction(store)}
         >
-          <App />
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
         </PersistGate>
       </Provider>
     </StrictMode>,

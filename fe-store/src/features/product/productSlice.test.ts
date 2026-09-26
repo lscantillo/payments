@@ -1,4 +1,4 @@
-import { fetchProduct, productReducer, setStock } from './productSlice'
+import { fetchCatalog, fetchProduct, productReducer, setStock } from './productSlice'
 import { sampleProduct } from '../../mocks/handlers'
 
 describe('product slice', () => {
@@ -11,6 +11,19 @@ describe('product slice', () => {
     )
     expect(ready.product?.name).toBe('Taza de cerámica Aurora')
     expect(productReducer(ready, setStock(2)).product?.stock).toBe(2)
+  })
+
+  it('stores a catalog and a load error', () => {
+    const loading = productReducer(undefined, fetchCatalog.pending('req', undefined))
+    expect(loading.catalogStatus).toBe('loading')
+    const ready = productReducer(loading, fetchCatalog.fulfilled([sampleProduct], 'req', undefined))
+    expect(ready.catalog).toHaveLength(1)
+    const failed = productReducer(
+      undefined,
+      fetchCatalog.rejected(null, 'req', undefined, 'No se pudo cargar el catálogo.'),
+    )
+    expect(failed.catalogStatus).toBe('error')
+    expect(failed.catalogError).toMatch(/catálogo/)
   })
 
   it('stores a load error', () => {

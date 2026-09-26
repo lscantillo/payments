@@ -1,12 +1,13 @@
 import { http, HttpResponse } from 'msw'
 import { env } from '../config/env'
 import { server } from '../test/setup'
-import { createQuote, createTransaction, getProduct, getTransaction } from './apiClient'
+import { createQuote, createTransaction, getProduct, getProducts, getTransaction } from './apiClient'
 import { ApiError } from './apiError'
 import { sampleProduct, sampleQuote } from '../mocks/handlers'
 
 describe('apiClient', () => {
   it('loads a product and creates a quote', async () => {
+    await expect(getProducts()).resolves.toEqual(expect.arrayContaining([expect.objectContaining({ id: 'prod-1' })]))
     await expect(getProduct('prod-1')).resolves.toMatchObject({ id: 'prod-1', name: sampleProduct.name })
     await expect(createQuote('prod-1')).resolves.toEqual(sampleQuote)
   })

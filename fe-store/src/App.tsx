@@ -1,26 +1,25 @@
-import { useEffect } from 'react'
-import { useAppDispatch, useAppSelector } from './app/hooks'
-import { env } from './config/env'
-import { fetchProduct } from './features/product/productSlice'
-import { ProductPage } from './features/product/ProductPage'
+import { Navigate, Route, Routes, useMatch } from 'react-router'
+import { useAppSelector } from './app/hooks'
 import { PaymentModal } from './features/payment/PaymentModal'
-import { SummaryBackdrop } from './features/checkout/SummaryBackdrop'
 import { StatusScreen } from './features/checkout/StatusScreen'
+import { SummaryBackdrop } from './features/checkout/SummaryBackdrop'
+import { CatalogPage } from './features/product/CatalogPage'
+import { ProductPage } from './features/product/ProductPage'
 
 export default function App() {
-  const dispatch = useAppDispatch()
   const step = useAppSelector((state) => state.checkout.step)
-
-  useEffect(() => {
-    void dispatch(fetchProduct(env.productId))
-  }, [dispatch])
+  const onProduct = useMatch('/products/:productId')
 
   return (
     <main className="shell" data-step={step}>
-      <ProductPage />
-      {step === 'payment' ? <PaymentModal /> : null}
-      {step === 'summary' ? <SummaryBackdrop /> : null}
-      {step === 'processing' || step === 'result' ? <StatusScreen /> : null}
+      <Routes>
+        <Route path="/" element={<CatalogPage />} />
+        <Route path="/products/:productId" element={<ProductPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      {onProduct && step === 'payment' ? <PaymentModal /> : null}
+      {onProduct && step === 'summary' ? <SummaryBackdrop /> : null}
+      {onProduct && (step === 'processing' || step === 'result') ? <StatusScreen /> : null}
     </main>
   )
 }

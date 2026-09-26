@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Frontend
 
-React with strict TypeScript and Redux Toolkit (Flux). No router: screens are the step `product | payment | summary | processing | result`.
+React with strict TypeScript and Redux Toolkit (Flux). `/` is the catalog and `/products/:id` is the detail page. Checkout screens stay in the step `payment | summary | processing | result`.
 
 Place code like this:
 

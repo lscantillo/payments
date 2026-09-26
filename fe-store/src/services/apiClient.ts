@@ -26,6 +26,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return (await response.json()) as T
 }
 
+export function getProducts(): Promise<Product[]> {
+  return request<Product[]>('/api/products')
+}
+
 export function getProduct(id: string): Promise<Product> {
   return request<Product>(`/api/products/${encodeURIComponent(id)}`)
 }
