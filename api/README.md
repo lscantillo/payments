@@ -87,7 +87,7 @@ bundle exec rspec
 
 | Metric | Result |
 | :--- | :--- |
-| Lines | 100.00% (347 / 347) |
-| Branches | 94.81% (73 / 77) |
+| Lines | 100.00% (349 / 349) |
+| Branches | 92.59% (75 / 81) |
 
 19 examples pass. The report is written to `api/coverage`.
