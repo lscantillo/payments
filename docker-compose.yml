@@ -1,0 +1,63 @@
+services:
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: checkout
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: checkout
+    volumes:
+      - checkout-pg:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U checkout -d checkout"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build: ./api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://checkout:${POSTGRES_PASSWORD}@postgres:5432/checkout
+      RACK_ENV: production
+      ALLOWED_ORIGINS: ${PUBLIC_ORIGIN}
+      GATEWAY_API_URL: ${GATEWAY_API_URL}
+      GATEWAY_PUBLIC_KEY: ${GATEWAY_PUBLIC_KEY}
+      GATEWAY_PRIVATE_KEY: ${GATEWAY_PRIVATE_KEY}
+      GATEWAY_INTEGRITY_SECRET: ${GATEWAY_INTEGRITY_SECRET}
+      GATEWAY_MODE: ${GATEWAY_MODE:-sandbox}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./fe-store
+      args:
+        VITE_API_BASE_URL: same-origin
+        VITE_GATEWAY_API_URL: ${GATEWAY_API_URL}
+        VITE_GATEWAY_PUBLIC_KEY: ${GATEWAY_PUBLIC_KEY}
+        VITE_USE_MOCKS: "false"
+    restart: unless-stopped
+    depends_on:
+      - api
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      PUBLIC_HOST: ${PUBLIC_HOST:-:80}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - web
+
+volumes:
+  checkout-pg:
+  caddy-data:
+  caddy-config:

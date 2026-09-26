@@ -1,0 +1,6 @@
+.env
+coverage
+log
+spec
+tmp
+.git

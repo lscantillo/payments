@@ -101,6 +101,21 @@ bundle exec rackup -p 4567
 
 Use cases return a Result. ActiveRecord is the PostgreSQL adapter and does not leak into the domain. RSpec coverage for this module is 100% of lines (353 / 353) and 92.59% of branches (75 / 81).
 
+## VPS
+
+Docker Compose runs PostgreSQL, the API, the storefront, and Caddy on one server. Database files stay in a Docker volume on that machine. Nothing here uses a managed database or object storage.
+
+On the server, install Docker, clone this repository, and create `.env` from [`.env.example`](.env.example). Put the sandbox keys there. The private key and the integrity secret are read when the API starts. The public key is copied into the storefront build, so changing it requires `docker compose up -d --build`.
+
+```bash
+cp .env.example .env
+docker compose up -d --build
+```
+
+`PUBLIC_HOST=:80` serves plain HTTP on port 80. Open `http://YOUR_SERVER_IP`. Swagger is at `/docs`. For HTTPS, point a domain at the server, set `PUBLIC_HOST` to that domain and `PUBLIC_ORIGIN` to `https://that-domain`, then run `docker compose up -d --build` again. Caddy requests the certificate. Leave ports 80 and 443 open.
+
+`docker compose down` stops the containers and keeps the database volume. `docker compose down -v` deletes it.
+
 ## Layout
 
 ```
