@@ -1,0 +1,50 @@
+# frozen_string_literal: true
+
+require 'dotenv/load'
+require 'pg'
+require 'active_record'
+require 'uri'
+
+def database_url
+  ENV.fetch('DATABASE_URL', 'postgres:///checkout_development')
+end
+
+def database_name
+  URI(database_url).path.delete_prefix('/')
+end
+
+def with_admin
+  connection = PG.connect(dbname: 'postgres')
+  yield connection
+ensure
+  connection&.close
+end
+
+namespace :db do
+  desc 'Create the PostgreSQL database'
+  task :create do
+    with_admin do |connection|
+      exists = connection.exec_params('SELECT 1 FROM pg_database WHERE datname = $1', [database_name]).any?
+      connection.exec("CREATE DATABASE #{connection.escape_identifier(database_name)}") unless exists
+    end
+  end
+
+  desc 'Drop the PostgreSQL database'
+  task :drop do
+    with_admin do |connection|
+      connection.exec("DROP DATABASE IF EXISTS #{connection.escape_identifier(database_name)}")
+    end
+  end
+
+  desc 'Run migrations'
+  task :migrate do
+    ENV['DATABASE_URL'] ||= database_url
+    require_relative 'config/boot'
+    ActiveRecord::MigrationContext.new(File.join(App::ROOT, 'db/migrate')).migrate
+  end
+
+  desc 'Seed the catalog'
+  task seed: :migrate do
+    require_relative 'db/seeds'
+  end
+end

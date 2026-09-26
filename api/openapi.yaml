@@ -1,0 +1,213 @@
+openapi: 3.0.3
+info:
+  title: Checkout API
+  version: 1.0.0
+  description: Product catalog, delivery quote, and card payment for the storefront.
+servers:
+  - url: http://localhost:4567
+paths:
+  /api/products:
+    get:
+      summary: List products
+      responses:
+        '200':
+          description: Catalog
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+  /api/products/{id}:
+    get:
+      summary: Show one product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Product
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Missing product
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/checkout/quote:
+    post:
+      summary: Price a product with the mandatory fees
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [productId]
+              properties:
+                productId:
+                  type: string
+      responses:
+        '200':
+          description: Quote in cents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
+        '404':
+          description: Missing product
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/transactions:
+    post:
+      summary: Start a card payment
+      description: Send the gateway card token. Do not send the card number or CVV.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTransaction'
+      responses:
+        '201':
+          description: Transaction, often still pending
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '404':
+          description: Missing product
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: No stock
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Invalid checkout
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/transactions/{id}:
+    get:
+      summary: Read a transaction and refresh it from the gateway while it is pending
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Transaction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '404':
+          description: Missing transaction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    Error:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+    Product:
+      type: object
+      required: [id, name, description, imageUrl, priceInCents, currency, stock]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        imageUrl:
+          type: string
+        priceInCents:
+          type: integer
+        currency:
+          type: string
+          example: COP
+        stock:
+          type: integer
+    Quote:
+      type: object
+      required: [productAmountInCents, baseFeeInCents, shippingFeeInCents, totalInCents, currency]
+      properties:
+        productAmountInCents:
+          type: integer
+        baseFeeInCents:
+          type: integer
+        shippingFeeInCents:
+          type: integer
+        totalInCents:
+          type: integer
+        currency:
+          type: string
+    CreateTransaction:
+      type: object
+      required: [productId, cardToken, installments, customer, delivery]
+      properties:
+        productId:
+          type: string
+        cardToken:
+          type: string
+        installments:
+          type: integer
+          enum: [1]
+        customer:
+          type: object
+          required: [fullName, email, phone]
+          properties:
+            fullName:
+              type: string
+            email:
+              type: string
+            phone:
+              type: string
+        delivery:
+          type: object
+          required: [address, city, region]
+          properties:
+            address:
+              type: string
+            city:
+              type: string
+            region:
+              type: string
+    Transaction:
+      allOf:
+        - $ref: '#/components/schemas/Quote'
+        - type: object
+          required: [id, status, reference]
+          properties:
+            id:
+              type: string
+            status:
+              type: string
+              enum: [PENDING, APPROVED, DECLINED, ERROR]
+            reference:
+              type: string
+            stock:
+              type: integer
+              description: Present once the payment is no longer pending.
