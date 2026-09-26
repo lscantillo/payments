@@ -52,6 +52,14 @@ module App
       respond(settings.container.get_transaction.call(params['id'])) { |payload| Serializers.transaction(payload) }
     end
 
+    get '/docs' do
+      send_file File.join(App::ROOT, 'public', 'docs.html'), type: :html
+    end
+
+    get '/openapi.yaml' do
+      send_file File.join(App::ROOT, 'openapi.yaml'), type: 'application/yaml'
+    end
+
     error JSON::ParserError do
       halt_error(Domain::Error.invalid('El cuerpo debe ser JSON.'))
     end

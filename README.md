@@ -89,7 +89,7 @@ Jest, React Testing Library, and MSW. Global coverage stays above 80%.
 
 ## API
 
-The Sinatra app is in `api`. Setup, the data model, and the OpenAPI file are in [`api/README.md`](api/README.md).
+The Sinatra app is in `api`. Setup and the data model are in [`api/README.md`](api/README.md). With the API running, Swagger UI is at [http://localhost:4567/docs](http://localhost:4567/docs).
 
 ```bash
 cd api
@@ -99,7 +99,7 @@ bundle exec rake db:create db:seed
 bundle exec rackup -p 4567
 ```
 
-Use cases return a Result. ActiveRecord is the PostgreSQL adapter and does not leak into the domain. RSpec coverage for this module is 100% of lines (349 / 349) and 92.59% of branches (75 / 81).
+Use cases return a Result. ActiveRecord is the PostgreSQL adapter and does not leak into the domain. RSpec coverage for this module is 100% of lines (353 / 353) and 92.59% of branches (75 / 81).
 
 ## Layout
 

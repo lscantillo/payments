@@ -15,6 +15,17 @@ RSpec.describe 'HTTP API' do
     }
   end
 
+  it 'serves Swagger UI and the OpenAPI document' do
+    get '/docs'
+    expect(last_response).to be_ok
+    expect(last_response.body).to include('swagger-ui')
+    expect(last_response.body).to include('/openapi.yaml')
+
+    get '/openapi.yaml'
+    expect(last_response).to be_ok
+    expect(last_response.body).to include('openapi: 3.0.3')
+  end
+
   it 'lists the catalog and quotes a product' do
     get '/api/products'
     expect(last_response).to be_ok

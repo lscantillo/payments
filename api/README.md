@@ -73,7 +73,7 @@ Amounts are integer cents. Currency is `COP`. JSON is camelCase.
 | `POST` | `/api/transactions` | `201` and `PENDING`, then the gateway status |
 | `GET` | `/api/transactions/:id` | Refreshes a pending payment and returns stock once it settles |
 
-The interactive description is [`openapi.yaml`](openapi.yaml).
+Open [http://localhost:4567/docs](http://localhost:4567/docs) while the API is running. That page is Swagger UI for [`openapi.yaml`](openapi.yaml).
 
 A quote adds a base fee of 150000 cents and shipping of 900000 cents. Stock decreases once, and only when a payment becomes `APPROVED`.
 
@@ -87,7 +87,7 @@ bundle exec rspec
 
 | Metric | Result |
 | :--- | :--- |
-| Lines | 100.00% (349 / 349) |
+| Lines | 100.00% (353 / 353) |
 | Branches | 92.59% (75 / 81) |
 
 19 examples pass. The report is written to `api/coverage`.
