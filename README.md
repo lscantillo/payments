@@ -1,6 +1,6 @@
 # Checkout store
 
-Mobile-first storefront for a small ceramics studio. This first slice is the React SPA in `fe-store`. It lists several pieces, opens a detail page for each one, and runs the card checkout against a sandbox gateway. The API is mocked in the browser until the backend exists.
+Mobile-first storefront for a small ceramics studio. The React SPA lives in `fe-store`. The Sinatra API lives in `api`. The browser can run against local mocks, or against the API on port 4567.
 
 ## Stack
 
@@ -13,6 +13,8 @@ Mobile-first storefront for a small ceramics studio. This first slice is the Rea
 ## Requirements
 
 - Node.js 22 or newer
+- Ruby 3.4.7, via mise (`api/.ruby-version`)
+- PostgreSQL 18
 
 ## Run locally
 
@@ -23,7 +25,7 @@ npm install
 npm run dev
 ```
 
-The dev server prints a local URL. With `VITE_USE_MOCKS=true`, the catalog, quote, and payment calls stay in the browser.
+The dev server prints a local URL. With `VITE_USE_MOCKS=true`, the catalog, quote, and payment calls stay in the browser. Set it to `false` to use the API below.
 
 | Script | Purpose |
 | :--- | :--- |
@@ -82,6 +84,20 @@ Jest, React Testing Library, and MSW. Global coverage stays above 80%.
 
 31 tests pass (`npm run test:coverage` inside `fe-store`).
 
+## API
+
+The Sinatra app is in `api`. Setup, the data model, and the OpenAPI file are in [`api/README.md`](api/README.md).
+
+```bash
+cd api
+cp .env.example .env
+bundle install
+bundle exec rake db:create db:seed
+bundle exec rackup -p 4567
+```
+
+Use cases return a Result. ActiveRecord is the PostgreSQL adapter and does not leak into the domain. RSpec coverage for this module is 100% of lines and 94.81% of branches.
+
 ## Layout
 
 ```
@@ -93,4 +109,7 @@ fe-store/src/services     HTTP client, tokenizer, polling
 fe-store/src/shared       money formatting and form controls
 fe-store/src/styles       global CSS
 fe-store/src/mocks        MSW handlers used in the browser and in tests
+api/app/domain            entities and Result
+api/app/application       checkout use cases
+api/app/adapters          Sinatra, ActiveRecord, sandbox gateway
 ```
