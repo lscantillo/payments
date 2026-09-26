@@ -37,7 +37,8 @@ module App
     end
 
     post '/api/checkout/quote' do
-      product_id = json_body.is_a?(Hash) ? json_body['productId'] : nil
+      body = json_body
+      product_id = body.is_a?(Hash) ? body['productId'] : nil
       respond(settings.container.build_quote.call(product_id)) { |quote| Serializers.quote(quote) }
     end
 
@@ -64,11 +65,12 @@ module App
     private
 
     def json_body
-      request.body.rewind
-      raw = request.body.read
-      return {} if raw.nil? || raw.empty?
+      return @json_body if defined?(@json_body)
 
-      JSON.parse(raw)
+      input = request.body
+      input.rewind if input.respond_to?(:rewind)
+      raw = input.read
+      @json_body = raw.nil? || raw.empty? ? {} : JSON.parse(raw)
     end
 
     def respond(result, success: 200)
