@@ -1,0 +1,96 @@
+# Checkout store
+
+Mobile-first storefront for a small ceramics studio. This first slice is the React SPA in `fe-store`. It lists several pieces, opens a detail page for each one, and runs the card checkout against a sandbox gateway. The API is mocked in the browser until the backend exists.
+
+## Stack
+
+- React 19, TypeScript, Vite
+- Redux Toolkit for Flux state, with `redux-persist` for the checkout session
+- React Router for the catalog (`/`) and each product (`/products/:id`)
+- Plain CSS (Flexbox and CSS Grid) in `fe-store/src/styles/global.css`
+- Jest, React Testing Library, and MSW
+
+## Requirements
+
+- Node.js 22 or newer
+
+## Run locally
+
+```bash
+cd fe-store
+cp .env.example .env
+npm install
+npm run dev
+```
+
+The dev server prints a local URL. With `VITE_USE_MOCKS=true`, the catalog, quote, and payment calls stay in the browser.
+
+| Script | Purpose |
+| :--- | :--- |
+| `npm run dev` | Start the SPA |
+| `npm run build` | Typecheck and production build |
+| `npm test` | Jest |
+| `npm run test:coverage` | Jest with the coverage report |
+
+## Environment
+
+Copy `fe-store/.env.example`. Never commit `.env`.
+
+| Variable | Purpose |
+| :--- | :--- |
+| `VITE_API_BASE_URL` | Own API origin. Default `http://localhost:4567` |
+| `VITE_PRODUCT_ID` | Reserved. The shop lists the catalog, and each detail page uses the id in the route |
+| `VITE_GATEWAY_API_URL` | Sandbox gateway base, for example `https://api-sandbox.co.uat.wompi.dev/v1` |
+| `VITE_GATEWAY_PUBLIC_KEY` | Sandbox public key. The private key and the integrity secret stay on the server |
+| `VITE_USE_MOCKS` | `true` intercepts the API and the gateway so the UI runs without a backend |
+
+## Shopper flow
+
+1. `/` loads `GET /api/products` and shows each piece with price, stock, and a detail link.
+2. `/products/:id` loads `GET /api/products/:id`. The button label is `Pay with credit card`. It stays disabled when stock is zero.
+3. The payment modal checks the card with the Luhn algorithm, detects Visa or Mastercard, and validates the CVV, expiry, and delivery fields.
+4. Continuing tokenizes the card in the browser and asks the API for a quote: product amount, mandatory base fee, shipping, and total.
+5. Confirm sends `POST /api/transactions` with the token and one installment. The app polls `GET /api/transactions/:id` until the status is approved, declined, failed, or still pending.
+6. Returning to the product clears the checkout session and reloads the stock.
+
+A refresh keeps the step, delivery details, quote, last four digits, and transaction. The card number and CVV must be entered again.
+
+## API contract
+
+Amounts are integer cents. Currency is `COP`. JSON is camelCase.
+
+- `GET /api/products`
+- `GET /api/products/:id`
+- `POST /api/checkout/quote` with `{ productId }`
+- `POST /api/transactions` with `{ productId, cardToken, installments, customer, delivery }` returns `PENDING`
+- `GET /api/transactions/:id` returns `PENDING`, `APPROVED`, `DECLINED`, or `ERROR`
+
+## Card data
+
+The card number and CVV live only in the payment modal. The browser exchanges them for a gateway token using the public key. Redux, `localStorage`, and the request to our API store `cardToken` and card metadata (brand, last four, holder, expiry). They never store the full number or the CVV.
+
+## Tests
+
+Jest, React Testing Library, and MSW. Global coverage stays above 80%.
+
+| Metric | Result |
+| :--- | :--- |
+| Statements | 93.94% |
+| Branches | 83.15% |
+| Functions | 93.70% |
+| Lines | 95.50% |
+
+31 tests pass (`npm run test:coverage` inside `fe-store`).
+
+## Layout
+
+```
+fe-store/src/app          store, hooks, persist storage
+fe-store/src/config       environment
+fe-store/src/domain       shared types
+fe-store/src/features     catalog, product detail, payment, checkout
+fe-store/src/services     HTTP client, tokenizer, polling
+fe-store/src/shared       money formatting and form controls
+fe-store/src/styles       global CSS
+fe-store/src/mocks        MSW handlers used in the browser and in tests
+```
