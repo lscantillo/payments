@@ -4,7 +4,7 @@ SPA de checkout: producto, datos de tarjeta y entrega, resumen de tarifas y esta
 
 ## Requisitos
 
-- Node.js 22 o superior
+- Node.js 24 o superior
 - API de checkout en `VITE_API_BASE_URL` (el backend todavía puede no estar levantado; los mocks locales cubren el flujo)
 
 ## Instalación

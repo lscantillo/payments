@@ -5,6 +5,8 @@
 
 Mobile-first storefront for a small ceramics studio. The React SPA lives in `fe-store`. The Sinatra API lives in `api`. The browser can run against local mocks, or against the API on port 4567.
 
+The running app is at [http://137.184.66.121](http://137.184.66.121). Swagger UI for the API is at [http://137.184.66.121/docs](http://137.184.66.121/docs).
+
 ## Stack
 
 - React 19, TypeScript, Vite
@@ -15,7 +17,7 @@ Mobile-first storefront for a small ceramics studio. The React SPA lives in `fe-
 
 ## Requirements
 
-- Node.js 22 or newer
+- Node.js 24 or newer
 - Ruby 3.4.7, via mise (`api/.ruby-version`)
 - PostgreSQL 18
 
