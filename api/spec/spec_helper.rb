@@ -2,7 +2,7 @@
 
 ENV['RACK_ENV'] = 'test'
 ENV['GATEWAY_MODE'] = 'fake'
-ENV['DATABASE_URL'] = 'postgres:///checkout_test'
+ENV['DATABASE_URL'] ||= 'postgres:///checkout_test'
 ENV['ALLOWED_ORIGINS'] = 'http://localhost:5173'
 ENV['CHECKOUT_TOKEN_SECRET'] = 'test-checkout-secret'
 
