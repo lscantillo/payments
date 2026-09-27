@@ -5,7 +5,7 @@
 
 Mobile-first storefront for a small ceramics studio. The React SPA lives in `fe-store`. The Sinatra API lives in `api`. The browser can run against local mocks, or against the API on port 4567.
 
-The running app is at [http://137.184.66.121](http://137.184.66.121). Swagger UI for the API is at [http://137.184.66.121/docs](http://137.184.66.121/docs).
+The running app is at [https://store.cantitos.space/](https://store.cantitos.space/). Swagger UI for the API is at [https://store.cantitos.space/docs](https://store.cantitos.space/docs). A short demo is at [https://share.zight.com/01a0e0aa-fbc1-72dc-9000-458f7551db88](https://share.zight.com/01a0e0aa-fbc1-72dc-9000-458f7551db88).
 
 ## Stack
 
