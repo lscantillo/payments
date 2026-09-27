@@ -1,6 +1,6 @@
 # Checkout store
 
-![Frontend coverage](https://img.shields.io/badge/frontend_coverage-95.50%25-brightgreen)
+![Frontend coverage](https://img.shields.io/badge/frontend_coverage-95.39%25-brightgreen)
 ![Backend coverage](https://img.shields.io/badge/backend_coverage-100%25-brightgreen)
 
 Mobile-first storefront for a small ceramics studio. The React SPA lives in `fe-store`. The Sinatra API lives in `api`. The browser can run against local mocks, or against the API on port 4567.
@@ -80,12 +80,12 @@ Jest, React Testing Library, and MSW. Global coverage stays above 80%.
 
 | Metric | Result |
 | :--- | :--- |
-| Statements | 93.94% |
-| Branches | 83.03% |
-| Functions | 93.70% |
-| Lines | 95.50% |
+| Statements | 93.69% |
+| Branches | 82.63% |
+| Functions | 93.75% |
+| Lines | 95.39% |
 
-31 tests pass (`npm run test:coverage` inside `fe-store`).
+33 tests pass (`npm run test:coverage` inside `fe-store`).
 
 ## API
 
@@ -99,7 +99,7 @@ bundle exec rake db:create db:seed
 bundle exec rackup -p 4567
 ```
 
-Use cases return a Result. ActiveRecord is the PostgreSQL adapter and does not leak into the domain. RSpec coverage for this module is 100% of lines (353 / 353) and 92.59% of branches (75 / 81).
+Use cases return a Result. ActiveRecord is the PostgreSQL adapter and does not leak into the domain. RSpec coverage for this module is 100% of lines (383 / 383) and 93.26% of branches (83 / 89).
 
 ## VPS
 

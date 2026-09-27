@@ -12,6 +12,7 @@ export function quoteFor(priceInCents: number): Quote {
     shippingFeeInCents: SHIPPING_FEE_IN_CENTS,
     totalInCents: priceInCents + BASE_FEE_IN_CENTS + SHIPPING_FEE_IN_CENTS,
     currency: 'COP',
+    checkoutToken: 'checkout-token',
   }
 }
 
@@ -95,6 +96,9 @@ export function createHandlers() {
       return HttpResponse.json({ data: { id: 'tok_approved' } }, { status: 201 })
     }),
     http.post(`${env.apiBaseUrl}/api/transactions`, async ({ request }) => {
+      if (request.headers.get('Authorization') !== 'Bearer checkout-token') {
+        return HttpResponse.json({ message: 'La cotización expiró. Vuelve a confirmar el pago.' }, { status: 401 })
+      }
       const body = (await request.json()) as CreateTransactionInput
       const product = findProduct(body.productId)
       if (!product) {

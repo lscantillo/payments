@@ -13,13 +13,17 @@ module Application
       @reference = reference
     end
 
-    def call(payload)
-      CheckoutInput.parse(payload).and_then { |input| place(input) }
+    def call(payload, grant)
+      CheckoutInput.parse(payload).and_then { |input| place(input, grant) }
     end
 
     private
 
-    def place(input)
+    def place(input, grant)
+      unless grant.product_id == input.product_id
+        return Domain::Result.err(Domain::Error.unauthorized('La cotización no corresponde a este producto.'))
+      end
+
       product = @products.find(input.product_id)
       return Domain::Result.err(Domain::Error.not_found('Producto no encontrado.')) unless product
       if product.stock <= 0
@@ -27,6 +31,10 @@ module Application
       end
 
       BuildQuote.new(products: @products).call(product.id).and_then do |quote|
+        unless quote.total_in_cents == grant.total_in_cents && quote.currency == grant.currency
+          return Domain::Result.err(Domain::Error.unauthorized('La cotización expiró. Vuelve a confirmar el pago.'))
+        end
+
         transaction = persist(input, quote)
         charge(transaction, input)
       end

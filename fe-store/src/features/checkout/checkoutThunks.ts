@@ -2,7 +2,7 @@ import { createAsyncThunk } from '@reduxjs/toolkit'
 import type { CheckoutState } from './checkoutSlice'
 import type { ProductState } from '../product/productSlice'
 import { createQuote, createTransaction } from '../../services/apiClient'
-import { toErrorMessage } from '../../services/apiError'
+import { ApiError, toErrorMessage } from '../../services/apiError'
 import { pollUntilSettled } from '../../services/pollTransaction'
 import type { Quote, Transaction } from '../../domain/types'
 import { transactionCreated } from './checkoutActions'
@@ -30,20 +30,35 @@ export const submitPayment = createAsyncThunk<
 >('checkout/submitPayment', async (_, { getState, dispatch, rejectWithValue }) => {
   const { checkout, product } = getState()
   const productId = product.product?.id
-  if (!productId || !checkout.token) {
+  const cardToken = checkout.token
+  if (!productId || !cardToken || !checkout.quote?.checkoutToken) {
     return rejectWithValue('Faltan datos para confirmar el pago.')
   }
 
-  try {
-    const created = await createTransaction({
-      productId,
-      cardToken: checkout.token,
-      installments: 1,
-      customer: checkout.customer,
-      delivery: checkout.delivery,
-    })
+  const pay = async (checkoutToken: string) => {
+    const created = await createTransaction(
+      {
+        productId,
+        cardToken,
+        installments: 1,
+        customer: checkout.customer,
+        delivery: checkout.delivery,
+      },
+      checkoutToken,
+    )
     dispatch(transactionCreated(created))
-    return await pollUntilSettled(created.id)
+    return pollUntilSettled(created.id)
+  }
+
+  try {
+    try {
+      return await pay(checkout.quote.checkoutToken)
+    } catch (error) {
+      if (!(error instanceof ApiError) || error.status !== 401) throw error
+      const quote = await dispatch(loadQuote(productId)).unwrap()
+      if (!quote.checkoutToken) return rejectWithValue('No se pudo renovar la cotización.')
+      return await pay(quote.checkoutToken)
+    }
   } catch (error) {
     return rejectWithValue(toErrorMessage(error, 'No se pudo procesar el pago.'))
   }

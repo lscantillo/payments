@@ -59,7 +59,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Quote'
+                allOf:
+                  - $ref: '#/components/schemas/Quote'
+                  - type: object
+                    required: [checkoutToken]
+                    properties:
+                      checkoutToken:
+                        type: string
+                        description: Signed checkout token. Send it as a Bearer token when starting the payment.
         '404':
           description: Missing product
           content:
@@ -69,7 +76,9 @@ paths:
   /api/transactions:
     post:
       summary: Start a card payment
-      description: Send the gateway card token. Do not send the card number or CVV.
+      description: Send the gateway card token and the checkout token from the quote. Do not send the card number or CVV.
+      security:
+        - checkoutToken: []
       requestBody:
         required: true
         content:
@@ -83,6 +92,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Transaction'
+        '401':
+          description: Missing, expired, or mismatched checkout token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Missing product
           content:
@@ -211,3 +226,9 @@ components:
             stock:
               type: integer
               description: Present once the payment is no longer pending.
+  securitySchemes:
+    checkoutToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Checkout token returned by POST /api/checkout/quote.

@@ -69,13 +69,13 @@ Amounts are integer cents. Currency is `COP`. JSON is camelCase.
 | :--- | :--- | :--- |
 | `GET` | `/api/products` | Catalog |
 | `GET` | `/api/products/:id` | One product |
-| `POST` | `/api/checkout/quote` | Product amount + base fee + shipping |
-| `POST` | `/api/transactions` | `201` and `PENDING`, then the gateway status |
+| `POST` | `/api/checkout/quote` | Product amount + base fee + shipping, plus a 10-minute `checkoutToken` |
+| `POST` | `/api/transactions` | `201` when the `Authorization: Bearer` checkout token matches the product and total |
 | `GET` | `/api/transactions/:id` | Refreshes a pending payment and returns stock once it settles |
 
 Open [http://localhost:4567/docs](http://localhost:4567/docs) while the API is running. That page is Swagger UI for [`openapi.yaml`](openapi.yaml).
 
-A quote adds a base fee of 150000 cents and shipping of 900000 cents. Stock decreases once, and only when a payment becomes `APPROVED`.
+A quote adds a base fee of 150000 cents and shipping of 900000 cents. The quote also returns `checkoutToken`, signed with `CHECKOUT_TOKEN_SECRET`. That secret stays in the API environment. Stock decreases once, and only when a payment becomes `APPROVED`.
 
 ## Tests
 
@@ -87,7 +87,7 @@ bundle exec rspec
 
 | Metric | Result |
 | :--- | :--- |
-| Lines | 100.00% (353 / 353) |
-| Branches | 92.59% (75 / 81) |
+| Lines | 100.00% (383 / 383) |
+| Branches | 93.26% (83 / 89) |
 
-19 examples pass. The report is written to `api/coverage`.
+22 examples pass. The report is written to `api/coverage`.

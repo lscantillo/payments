@@ -32,6 +32,19 @@ RSpec.describe 'checkout use cases' do
     )
   end
 
+  def grant_for(product_id)
+    quote = Application::BuildQuote.new(products:).call(product_id)
+    Application::CheckoutGrant.new(
+      product_id:,
+      total_in_cents: quote.success? ? quote.value.total_in_cents : 0,
+      currency: 'COP'
+    )
+  end
+
+  def place(gateway, body = payload)
+    use_case(gateway).call(body, grant_for(body['productId']))
+  end
+
   it 'quotes the product, base fee and shipping' do
     quote = Application::BuildQuote.new(products:).call('prod-1').value
     expect(quote.total_in_cents).to eq(9_950_000)
@@ -55,7 +68,7 @@ RSpec.describe 'checkout use cases' do
 
   it 'approves a token and decrements stock once' do
     gateway = ScriptedGateway.new(charge: Domain::Result.ok(Domain::Charge.new(gateway_id: 'gw_1', status: 'APPROVED')))
-    result = use_case(gateway).call(payload)
+    result = place(gateway)
     expect(result.value[:transaction].status).to eq('APPROVED')
     expect(result.value[:stock]).to eq(4)
     expect(result.value[:transaction].card_token).to eq('tok_approved')
@@ -67,12 +80,12 @@ RSpec.describe 'checkout use cases' do
 
   it 'keeps stock when the gateway declines or is unavailable' do
     declined = ScriptedGateway.new(charge: Domain::Result.ok(Domain::Charge.new(gateway_id: 'gw_2', status: 'DECLINED')))
-    result = use_case(declined).call(payload('cardToken' => 'tok_declined'))
+    result = place(declined, payload('cardToken' => 'tok_declined'))
     expect(result.value[:transaction].status).to eq('DECLINED')
     expect(products.find('prod-1').stock).to eq(5)
 
     down = ScriptedGateway.new(charge: Domain::Result.err(Domain::Error.unavailable('No se pudo crear el pago en la pasarela.')))
-    failed = use_case(down).call(payload)
+    failed = place(down)
     expect(failed).to be_failure
     expect(products.find('prod-1').stock).to eq(5)
   end
@@ -82,7 +95,7 @@ RSpec.describe 'checkout use cases' do
       charge: Domain::Result.ok(Domain::Charge.new(gateway_id: 'gw_3', status: 'PENDING')),
       fetch: Domain::Result.ok(Domain::Charge.new(gateway_id: 'gw_3', status: 'APPROVED'))
     )
-    created = use_case(gateway).call(payload)
+    created = place(gateway)
     expect(created.value[:transaction].status).to eq('PENDING')
     expect(created.value[:stock]).to be_nil
 
@@ -96,7 +109,7 @@ RSpec.describe 'checkout use cases' do
       charge: Domain::Result.ok(Domain::Charge.new(gateway_id: 'gw_4', status: 'PENDING')),
       fetch: Domain::Result.err(Domain::Error.unavailable('caído'))
     )
-    pending = use_case(stalled).call(payload)
+    pending = place(stalled)
     still = Application::GetTransaction.new(transactions:, products:, gateway: stalled, sync:).call(pending.value[:transaction].id)
     expect(still.value[:transaction].status).to eq('PENDING')
     expect(still.value[:stock]).to be_nil
@@ -104,10 +117,18 @@ RSpec.describe 'checkout use cases' do
 
   it 'does not sell a product that is out of stock' do
     products.decrement_stock('prod-1') until products.find('prod-1').stock.zero?
-    result = use_case(ScriptedGateway.new(charge: nil)).call(payload('productId' => 'missing'))
+    result = place(ScriptedGateway.new(charge: nil), payload('productId' => 'missing'))
     expect(result.error.http_status).to eq(404)
 
-    result = use_case(ScriptedGateway.new(charge: nil)).call(payload)
+    result = place(ScriptedGateway.new(charge: nil))
     expect(result.error.http_status).to eq(409)
+  end
+
+  it 'rejects a checkout grant that does not match the product or the total' do
+    mismatched = use_case(ScriptedGateway.new(charge: nil)).call(payload, grant_for('prod-1').with(product_id: 'prod-2'))
+    expect(mismatched.error.http_status).to eq(401)
+
+    stale = use_case(ScriptedGateway.new(charge: nil)).call(payload, grant_for('prod-1').with(total_in_cents: 1))
+    expect(stale.error.http_status).to eq(401)
   end
 end

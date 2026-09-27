@@ -4,6 +4,7 @@ ENV['RACK_ENV'] = 'test'
 ENV['GATEWAY_MODE'] = 'fake'
 ENV['DATABASE_URL'] = 'postgres:///checkout_test'
 ENV['ALLOWED_ORIGINS'] = 'http://localhost:5173'
+ENV['CHECKOUT_TOKEN_SECRET'] = 'test-checkout-secret'
 
 require 'pg'
 
@@ -32,8 +33,8 @@ ActiveRecord::MigrationContext.new(File.join(App::ROOT, 'db/migrate'), schema).m
 module RequestHelpers
   def app = App::Http
 
-  def json_post(path, body)
-    post path, JSON.generate(body), { 'CONTENT_TYPE' => 'application/json' }
+  def json_post(path, body, headers = {})
+    post path, JSON.generate(body), { 'CONTENT_TYPE' => 'application/json' }.merge(headers)
   end
 
   def json_body

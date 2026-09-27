@@ -60,4 +60,43 @@ describe('checkout thunks', () => {
     await store.dispatch(loadQuote('prod-1'))
     expect(store.getState().checkout.error).toBe('Tarifa no disponible')
   })
+
+  it('quotes again once when the checkout token is rejected', async () => {
+    let attempts = 0
+    server.use(
+      http.post(`${env.apiBaseUrl}/api/transactions`, () => {
+        attempts += 1
+        if (attempts === 1) {
+          return HttpResponse.json({ message: 'La cotización expiró. Vuelve a confirmar el pago.' }, { status: 401 })
+        }
+        return HttpResponse.json(
+          { id: 'tx-retry', status: 'PENDING', reference: 'REF-tx-retry', ...sampleQuote },
+          { status: 201 },
+        )
+      }),
+      http.get(`${env.apiBaseUrl}/api/transactions/tx-retry`, () =>
+        HttpResponse.json({ id: 'tx-retry', status: 'APPROVED', reference: 'REF-tx-retry', ...sampleQuote, stock: 4 }),
+      ),
+    )
+    const { store } = createAppStore()
+    await store.dispatch(fetchProduct('prod-1'))
+    store.dispatch(readyForSummary(summary))
+    await store.dispatch(submitPayment())
+    expect(attempts).toBe(2)
+    expect(store.getState().checkout.transaction?.status).toBe('APPROVED')
+  })
+
+  it('keeps the summary when a refreshed checkout token is still rejected', async () => {
+    server.use(
+      http.post(`${env.apiBaseUrl}/api/transactions`, () =>
+        HttpResponse.json({ message: 'No se pudo validar el pago.' }, { status: 401 }),
+      ),
+    )
+    const { store } = createAppStore()
+    await store.dispatch(fetchProduct('prod-1'))
+    store.dispatch(readyForSummary(summary))
+    await store.dispatch(submitPayment())
+    expect(store.getState().checkout.step).toBe('summary')
+    expect(store.getState().checkout.error).toBe('No se pudo validar el pago.')
+  })
 })

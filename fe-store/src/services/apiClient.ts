@@ -41,9 +41,10 @@ export function createQuote(productId: string): Promise<Quote> {
   })
 }
 
-export function createTransaction(input: CreateTransactionInput): Promise<Transaction> {
+export function createTransaction(input: CreateTransactionInput, checkoutToken: string): Promise<Transaction> {
   return request<Transaction>('/api/transactions', {
     method: 'POST',
+    headers: { Authorization: `Bearer ${checkoutToken}` },
     body: JSON.stringify(input),
   })
 }

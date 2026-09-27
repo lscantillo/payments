@@ -5,6 +5,7 @@ module Domain
     def self.not_found(message) = new(code: :not_found, message:, http_status: 404)
     def self.invalid(message) = new(code: :invalid, message:, http_status: 422)
     def self.conflict(message) = new(code: :conflict, message:, http_status: 409)
+    def self.unauthorized(message) = new(code: :unauthorized, message:, http_status: 401)
     def self.unavailable(message) = new(code: :unavailable, message:, http_status: 502)
   end
 

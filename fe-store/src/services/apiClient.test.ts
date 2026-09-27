@@ -31,9 +31,11 @@ describe('apiClient', () => {
 
   it('posts a transaction without card secrets', async () => {
     let body: Record<string, unknown> = {}
+    let authorization: string | null = null
     server.use(
       http.post(`${env.apiBaseUrl}/api/transactions`, async ({ request }) => {
         body = (await request.json()) as Record<string, unknown>
+        authorization = request.headers.get('Authorization')
         return HttpResponse.json({
           id: 'tx-9',
           status: 'PENDING',
@@ -42,16 +44,21 @@ describe('apiClient', () => {
         })
       }),
     )
-    const transaction = await createTransaction({
-      productId: 'prod-1',
-      cardToken: 'tok_approved',
-      installments: 1,
-      customer: { fullName: 'Ada', email: 'ada@example.com', phone: '3001234567' },
-      delivery: { address: 'Calle 10', city: 'Bogota', region: 'Cundinamarca' },
-    })
+    const transaction = await createTransaction(
+      {
+        productId: 'prod-1',
+        cardToken: 'tok_approved',
+        installments: 1,
+        customer: { fullName: 'Ada', email: 'ada@example.com', phone: '3001234567' },
+        delivery: { address: 'Calle 10', city: 'Bogota', region: 'Cundinamarca' },
+      },
+      'checkout-token',
+    )
     expect(transaction.id).toBe('tx-9')
+    expect(authorization).toBe('Bearer checkout-token')
     expect(body).not.toHaveProperty('number')
     expect(body).not.toHaveProperty('cvc')
+    expect(body).not.toHaveProperty('checkoutToken')
     expect(body.cardToken).toBe('tok_approved')
   })
 })

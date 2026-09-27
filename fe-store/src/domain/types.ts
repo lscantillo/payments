@@ -22,6 +22,7 @@ export interface Quote {
   shippingFeeInCents: number
   totalInCents: number
   currency: Currency
+  checkoutToken?: string
 }
 
 export interface CustomerInput {

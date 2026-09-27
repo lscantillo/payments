@@ -15,6 +15,11 @@ RSpec.describe 'HTTP API' do
     }
   end
 
+  def pay(body)
+    json_post '/api/checkout/quote', { productId: body[:productId] }
+    json_post '/api/transactions', body, 'HTTP_AUTHORIZATION' => "Bearer #{json_body['checkoutToken']}"
+  end
+
   it 'serves Swagger UI and the OpenAPI document' do
     get '/docs'
     expect(last_response).to be_ok
@@ -38,13 +43,14 @@ RSpec.describe 'HTTP API' do
     json_post '/api/checkout/quote', { productId: 'prod-1' }
     expect(json_body['totalInCents']).to eq(9_950_000)
     expect(json_body['baseFeeInCents']).to eq(150_000)
+    expect(json_body['checkoutToken']).to match(/\A[\w-]+\.[\w-]+\.[\w-]+\z/)
 
     get '/api/products/missing'
     expect(last_response.status).to eq(404)
   end
 
   it 'approves a payment without storing the card number' do
-    json_post '/api/transactions', order
+    pay(order)
     expect(last_response.status).to eq(201)
     expect(json_body['status']).to eq('APPROVED')
     expect(json_body['stock']).to eq(4)
@@ -59,14 +65,14 @@ RSpec.describe 'HTTP API' do
   end
 
   it 'leaves stock unchanged when the token is declined' do
-    json_post '/api/transactions', order.merge(cardToken: 'tok_declined')
+    pay(order.merge(cardToken: 'tok_declined'))
     expect(json_body['status']).to eq('DECLINED')
     expect(json_body['stock']).to eq(5)
     expect(Persistence::ProductRecord.find('prod-1').stock).to eq(5)
   end
 
   it 'rejects a card number and an invalid body' do
-    json_post '/api/transactions', order.merge(cardToken: '4242424242424242')
+    pay(order.merge(cardToken: '4242424242424242'))
     expect(last_response.status).to eq(422)
     expect(Persistence::TransactionRecord.count).to eq(0)
 
@@ -79,8 +85,43 @@ RSpec.describe 'HTTP API' do
     post '/api/checkout/quote', '', { 'CONTENT_TYPE' => 'application/json' }
     expect(last_response.status).to eq(404)
 
-    json_post '/api/transactions', order.merge(productId: 'missing')
+    json_post '/api/checkout/quote', { productId: 'prod-1' }
+    quoted = json_body['checkoutToken']
+    json_post '/api/transactions', order.merge(productId: 'prod-2'), 'HTTP_AUTHORIZATION' => "Bearer #{quoted}"
+    expect(last_response.status).to eq(401)
+
+    missing = Adapters::JwtCheckoutToken.new(secret: ENV.fetch('CHECKOUT_TOKEN_SECRET')).issue(
+      product_id: 'missing', total_in_cents: 1, currency: 'COP'
+    )
+    json_post '/api/transactions', order.merge(productId: 'missing'), 'HTTP_AUTHORIZATION' => "Bearer #{missing}"
     expect(last_response.status).to eq(404)
+  end
+
+  it 'rejects a missing, expired, or altered checkout token' do
+    json_post '/api/transactions', order
+    expect(last_response.status).to eq(401)
+
+    json_post '/api/checkout/quote', { productId: 'prod-1' }
+    token = json_body['checkoutToken']
+    json_post '/api/transactions', order, 'HTTP_AUTHORIZATION' => "Bearer #{token}x"
+    expect(last_response.status).to eq(401)
+
+    expired = JWT.encode(
+      { 'productId' => 'prod-1', 'totalInCents' => 9_950_000, 'currency' => 'COP', 'exp' => Time.now.to_i - 5 },
+      ENV.fetch('CHECKOUT_TOKEN_SECRET'),
+      'HS256'
+    )
+    json_post '/api/transactions', order, 'HTTP_AUTHORIZATION' => "Bearer #{expired}"
+    expect(last_response.status).to eq(401)
+    expect(json_body['message']).to match(/expir/)
+
+    stale = JWT.encode(
+      { 'productId' => 'prod-1', 'totalInCents' => 1, 'currency' => 'COP', 'exp' => Time.now.to_i + 60 },
+      ENV.fetch('CHECKOUT_TOKEN_SECRET'),
+      'HS256'
+    )
+    json_post '/api/transactions', order, 'HTTP_AUTHORIZATION' => "Bearer #{stale}"
+    expect(last_response.status).to eq(401)
   end
 
   it 'returns a generic error when a use case raises' do

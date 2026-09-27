@@ -38,12 +38,24 @@ module App
 
     post '/api/checkout/quote' do
       body = json_body
-      product_id = body.is_a?(Hash) ? body['productId'] : nil
-      respond(settings.container.build_quote.call(product_id)) { |quote| Serializers.quote(quote) }
+      product_id = body.is_a?(Hash) ? body['productId'].to_s.strip : ''
+      respond(settings.container.build_quote.call(product_id)) do |quote|
+        Serializers.quote(quote).merge(
+          checkoutToken: settings.container.checkout_tokens.issue(
+            product_id:,
+            total_in_cents: quote.total_in_cents,
+            currency: quote.currency
+          )
+        )
+      end
     end
 
     post '/api/transactions' do
-      respond(settings.container.create_transaction.call(json_body), success: 201) do |payload|
+      body = json_body
+      verified = settings.container.checkout_tokens.verify(bearer_token)
+      return halt_error(verified.error) if verified.failure?
+
+      respond(settings.container.create_transaction.call(body, verified.value), success: 201) do |payload|
         Serializers.transaction(payload)
       end
     end
@@ -91,6 +103,13 @@ module App
     def halt_error(error)
       content_type :json
       halt error.http_status, JSON.generate({ message: error.message })
+    end
+
+    def bearer_token
+      header = request.env['HTTP_AUTHORIZATION'].to_s
+      return header.delete_prefix('Bearer ').strip if header.start_with?('Bearer ')
+
+      ''
     end
   end
 end

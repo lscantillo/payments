@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 module App
-  Container = Data.define(:list_products, :get_product, :build_quote, :create_transaction, :get_transaction)
+  Container = Data.define(
+    :list_products, :get_product, :build_quote, :create_transaction, :get_transaction, :checkout_tokens
+  )
 
   def self.container(gateway: nil)
     database = Persistence::Database
@@ -18,7 +20,8 @@ module App
       create_transaction: Application::CreateTransaction.new(
         products:, customers:, deliveries:, transactions:, gateway:, sync:, database:
       ),
-      get_transaction: Application::GetTransaction.new(transactions:, products:, gateway:, sync:)
+      get_transaction: Application::GetTransaction.new(transactions:, products:, gateway:, sync:),
+      checkout_tokens: Adapters::JwtCheckoutToken.new(secret: ENV.fetch('CHECKOUT_TOKEN_SECRET'))
     )
   end
 end

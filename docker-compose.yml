@@ -26,6 +26,7 @@ services:
       GATEWAY_PRIVATE_KEY: ${GATEWAY_PRIVATE_KEY}
       GATEWAY_INTEGRITY_SECRET: ${GATEWAY_INTEGRITY_SECRET}
       GATEWAY_MODE: ${GATEWAY_MODE:-sandbox}
+      CHECKOUT_TOKEN_SECRET: ${CHECKOUT_TOKEN_SECRET}
     depends_on:
       postgres:
         condition: service_healthy

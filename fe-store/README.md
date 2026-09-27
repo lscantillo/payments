@@ -53,9 +53,9 @@ Jest, React Testing Library y MSW. Umbral global superior al 80%.
 
 | Métrica | Resultado |
 | :--- | :--- |
-| Statements | 93.94% |
-| Branches | 83.03% |
-| Functions | 93.70% |
-| Lines | 95.50% |
+| Statements | 93.69% |
+| Branches | 82.63% |
+| Functions | 93.75% |
+| Lines | 95.39% |
 
-31 pruebas pasando (`npm run test:coverage`).
+33 pruebas pasando (`npm run test:coverage`).
